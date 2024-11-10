@@ -1,0 +1,8 @@
+.DS_Store
+*.html
+*.txt
+*.xml
+*.css
+*.js
+*.csv
+requests.scroll
