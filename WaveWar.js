@@ -185,7 +185,7 @@ class Globe {
     // Zoom properties
     this.minZoom = 0.1
     this.maxZoom = 10
-    this.currentZoom = 0.2
+    this.currentZoom = .7
     this.zoomSpeed = 0.02
 
     this.activeEMPWaves = []
@@ -199,8 +199,8 @@ class Globe {
 
     this.drones = []
     this.lastDroneSpawn = 0
-    this.droneSpawnInterval = 2000 // Spawn a new drone every 2 seconds
-    this.maxDrones = 10 // Maximum number of drones allowed
+    this.droneSpawnInterval = 1000 // Spawn a new drone every 2 seconds
+    this.maxDrones = 1000 // Maximum number of drones allowed
   }
 
   createControlPanel() {
@@ -288,6 +288,9 @@ class Globe {
         this.handleAction("EMP")
       } else if (e.key.toLowerCase() === "s") {
         this.handleAction("SOUND")
+      }
+       else if (e.key.toLowerCase() === "f") {
+        this.toggleFullScreen()
       }
     })
   }
@@ -696,6 +699,7 @@ class Globe {
     ) {
       this.drones.push(new Drone(this))
       this.lastDroneSpawn = currentTime
+      this.droneSpawnInterval = Math.max(10, this.droneSpawnInterval * .8)
     }
 
     // Update drones
@@ -789,9 +793,8 @@ class Globe {
     return this
   }
 
-  listenForClicks() {
-    document.body.addEventListener("dblclick", () => {
-      if (!document.fullscreenElement) {
+  toggleFullScreen() {
+if (!document.fullscreenElement) {
         document.body.requestFullscreen().catch((err) => {
           console.log(
             `Error trying to go fullscreen: ${err.message} (${err.name})`,
@@ -800,64 +803,13 @@ class Globe {
       } else {
         document.exitFullscreen()
       }
-    })
-
-    // Pause/Resume on single-click
-    document.body.addEventListener(
-      "click",
-      () => (this.shouldRotate = !this.shouldRotate),
-    )
-    return this
   }
 
   shouldRotate = true
 
-  bindToSSE() {
-    const logContainer = document.getElementById("log-container")
-    const urlParams = new URLSearchParams(window.location.search)
-    const folderName = urlParams.get("folderName")
-    const queryString = folderName ? `?folderName=${folderName}` : ""
-    if (folderName)
-      document.querySelector("#summaryLink").href =
-        "summarizeRequests.htm?folderName=" + folderName
-    else document.querySelector("#summaryLink").href = "requests.html"
-    const eventSource = new EventSource(`/requests.htm${queryString}`)
-    eventSource.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      const logEntry = document.createElement("div")
-      logEntry.textContent = data.log
-      logContainer.appendChild(logEntry)
-      logContainer.scrollTop = logContainer.scrollHeight
-
-      const parts = data.log.split(" ")
-      const long = parseFloat(parts.pop())
-      const lat = parseFloat(parts.pop())
-      const type = parts.shift()
-      const page = parts.shift()
-
-      const request = {
-        lat,
-        long,
-        type,
-        page,
-      }
-      this.visualizeHit(request)
-    }
-
-    eventSource.onerror = (error) => {
-      console.error("EventSource failed:", error)
-      eventSource.close()
-    }
-
-    eventSource.onopen = (event) => {
-      console.log("SSE connection opened")
-    }
-
-    return this
-  }
 }
 
-window.globe = new Globe().createGlobe().listenToResize().listenForClicks()
+window.globe = new Globe().createGlobe().listenToResize()
 
 // Add the control panel after initialization
 window.globe.createControlPanel()
